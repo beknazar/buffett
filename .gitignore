@@ -1,0 +1,5 @@
+*.pyc
+.DS_Store
+*.pem
+log/*
+db.sqlite3
