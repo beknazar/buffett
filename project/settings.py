@@ -100,6 +100,52 @@ USE_L10N = True
 
 USE_TZ = True
 
+# LOGGING
+
+LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'default': {
+            '()': 'project.log.ColorFormatter',
+            'format': '%(asctime)s %(levelname)-8s %(name)-35s %(message)s'
+        },
+        'collector': {
+            '()': 'project.log.ColorFormatter',
+            'format': '%(asctime)s  %(levelname)-9s '
+                      '%(name)-35s %(message)s',
+            'datefmt': LOG_DATE_FORMAT,
+        },
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/remote.log'),
+            'formatter': 'collector',
+        },
+    },
+    'loggers': {
+        'tool': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

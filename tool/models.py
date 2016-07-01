@@ -7,11 +7,19 @@ from project.common import TimestampedModel
 
 
 class Sector(TimestampedModel):
-    title = models.CharField(_('title'), max_length=30)
+    value = models.CharField(_('value'), max_length=60)
+    title = models.CharField(_('title'), max_length=100)
+
+    def __unicode__(self):
+        return self.title
 
 
 class Industry(TimestampedModel):
-    title = models.CharField(_('title'), max_length=30)
+    value = models.CharField(_('value'), max_length=60)
+    title = models.CharField(_('title'), max_length=100)
+
+    def __unicode__(self):
+        return self.title
 
 
 class Stock(TimestampedModel):
@@ -29,5 +37,10 @@ class Stock(TimestampedModel):
                                related_name='stocks')
     industry = models.ForeignKey(Industry, blank=True, null=True,
                                  related_name='stocks')
+    ipo_date = models.DateField(_('ipo date'), blank=True, null=True)
 
     market_cap = models.BigIntegerField(_('market cap'), default=0)
+    ltdebt_equity = models.FloatField(_('long term debt to equity'),
+                                      blank=True, null=True)
+    beta = models.FloatField(_('long term debt to equity'),
+                             blank=True, null=True)
