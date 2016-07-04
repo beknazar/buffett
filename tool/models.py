@@ -42,5 +42,7 @@ class Stock(TimestampedModel):
     market_cap = models.BigIntegerField(_('market cap'), default=0)
     ltdebt_equity = models.FloatField(_('long term debt to equity'),
                                       blank=True, null=True)
-    beta = models.FloatField(_('long term debt to equity'),
+    beta = models.FloatField(_('beta'),
+                             blank=True, null=True)
+    wacc = models.FloatField(_('weighted average cost of capital'),
                              blank=True, null=True)

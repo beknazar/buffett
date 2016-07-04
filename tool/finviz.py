@@ -48,9 +48,9 @@ class Finviz(LogMixin):
                     entry[key] = self.convert(key, attrs[i * cols_count + j])
                 entry['exchange'] = exchange
                 entries.append(Stock(**entry))
-            next_el = tree.xpath('//a[@class="tab-link"]/b')[0]
-            if next_el.text_content() == 'next':
-                criteria = next_el.getparent().attrib['href']
+            next_el = tree.xpath('//a[contains(., "next")]')
+            if len(next_el) > 0:
+                criteria = next_el[0].attrib['href']
                 r = self.request('get', self.homepage_url.format(criteria))
                 tree = html.fromstring(r.content)
             else:
@@ -59,20 +59,13 @@ class Finviz(LogMixin):
         Stock.objects.bulk_create(entries)
 
     def convert(self, kind, st):
-        self.info('Kind: {0}, St: {1}'.format(kind, st))
         res = None
         if kind in ['ticker', 'name']:
             res = st
         elif kind == 'sector':
-            try:
-                res = Sector.objects.get(title=st)
-            except Sector.DoesNotExist:
-                self.warn('Sector.DoesNotExist: title: {0}'.format(st))
+            res = Sector.objects.get(title=st)
         elif kind == 'industry':
-            try:
-                res = Industry.objects.get(title=st)
-            except Industry.DoesNotExist:
-                self.warn('Industry.DoesNotExist: title: {0}'.format(st))
+            res = Industry.objects.get(title=st)
         elif kind == 'market_cap' and st != '-':
             mult = st[-1] == 'B' and 10**9 or 10**6
             res = float(st[:-1]) * mult
