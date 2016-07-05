@@ -1,35 +1,28 @@
-from lxml import html
 import requests
 from datetime import datetime
 
 from models import Sector, Industry, Stock
-from project.common import LogMixin
+from project.common import Script
 
 
-class Finviz(LogMixin):
+class Finviz(Script):
     homepage_url = 'http://finviz.com/{0}'
-    default_header = {
-        'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) '
-                      'AppleWebKit/537.36 (KHTML, like Gecko) '
-                      'Chrome/48.0.2564.116 Safari/537.36'
-    }
     attr_map = ['ticker', 'name', 'sector', 'industry', 'market_cap',
                 'ltdebt_equity', 'beta', 'ipo_date', ]
     results_count = 20
+
+    def __init__(self, *args, **kwargs):
+        # Initiate a new session
+        self.client = requests.Session()
 
     def crawl(self, criteria, exchange):
         start = criteria.find('&c=')
         cols_count = len(criteria[start+3:].split(','))
 
-        # Initiate a new session
-        self.client = requests.Session()
-
         entries = []
         page = 0
         page_count = 1
-        r = self.request('get', self.homepage_url.format(criteria))
-        self.default_header = r.request.headers
-        tree = html.fromstring(r.content)
+        tree = self.get_tree(self.homepage_url.format(criteria))
 
         page_nums = tree.xpath('//a[@class="screener-pages"]/text()')
         if len(page_nums) > 0:
@@ -51,8 +44,7 @@ class Finviz(LogMixin):
             next_el = tree.xpath('//a[contains(., "next")]')
             if len(next_el) > 0:
                 criteria = next_el[0].attrib['href']
-                r = self.request('get', self.homepage_url.format(criteria))
-                tree = html.fromstring(r.content)
+                tree = self.get_tree(self.homepage_url.format(criteria))
             else:
                 break
         # Create stocks in bulk
@@ -67,23 +59,9 @@ class Finviz(LogMixin):
         elif kind == 'industry':
             res = Industry.objects.get(title=st)
         elif kind == 'market_cap' and st != '-':
-            mult = st[-1] == 'B' and 10**9 or 10**6
-            res = float(st[:-1]) * mult
+            res = self.convert_money(st)
         elif kind in ['ltdebt_equity', 'beta'] and st != '-':
             res = float(st)
         elif kind == 'ipo_date' and st != '-':
             res = datetime.strptime(st, '%m/%d/%Y')
         return res
-
-    def request(self, method, url, data=None, stream=False):
-        r = None
-        try:
-            if method == 'post':
-                r = self.client.post(url, data=data,
-                                     headers=self.default_header)
-            else:
-                r = self.client.get(url, headers=self.default_header,
-                                    stream=stream)
-        except requests.exceptions.ConnectionError as e:
-            self.warn('Error inside request: {0}'.format(e))
-        return r

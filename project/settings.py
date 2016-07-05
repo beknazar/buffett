@@ -152,3 +152,9 @@ LOGGING = {
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, '../tool/static')
+
+
+# Stock variables
+
+AVG_MARKET_RETURN = 11
+RISK_FREE_RATE = 3

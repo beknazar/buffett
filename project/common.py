@@ -1,6 +1,8 @@
+from lxml import html
 import datetime
 import logging
 import logging.handlers
+import requests
 
 from django.db import models
 from django.utils import timezone
@@ -30,11 +32,12 @@ class LogMixin(object):
 
     @property
     def logger_label(self):
-        return self._logger_label or self.__unicode__()
+        return (hasattr(self, '_logger_label') and self._logger_label or
+                self.__unicode__())
 
     @property
     def logger(self):
-        if self._logger is None:
+        if not hasattr(self, '_logger') or self._logger is None:
             self._logger = logging.getLogger(self.__class__.__module__)
         return self._logger
 
@@ -60,6 +63,55 @@ class LogMixin(object):
     def critical(self, msg):
         self.logger.critical(self.LOG_FORMAT.format(
             label=self.logger_label, msg=msg))
+
+
+class Script(LogMixin):
+    default_header = {
+        'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) '
+                      'Chrome/48.0.2564.116 Safari/537.36'
+    }
+
+    def convert_money(self, st):
+        if st == '-':
+            return 0.0
+        mult = 1
+        if st[0] == '(':
+            mult = -1
+            st = st[1:-1]
+        end = st[-1]
+
+        num_part = st[:-1]
+        if end == 'B':
+            mult *= 10**9
+        elif end == 'M':
+            mult *= 10**6
+        else:
+            num_part = st.replace(',', '')
+        try:
+            return float(num_part) * mult
+        except ValueError:
+            self.warn('ValueError: {0}'.format(st))
+        return None
+
+    def request(self, method, url, data=None, stream=False):
+        r = None
+        try:
+            if method == 'post':
+                r = self.client.post(url, data=data,
+                                     headers=self.default_header)
+            else:
+                r = self.client.get(url, headers=self.default_header,
+                                    stream=stream)
+        except requests.exceptions.ConnectionError as e:
+            self.warn('Error inside request: {0}'.format(e))
+        return r
+
+    def get_tree(self, url):
+        r = self.request('get', url)
+        self.default_header = r.request.headers
+        return html.fromstring(r.content)
+
 
 # Base Mixins
 # ===========

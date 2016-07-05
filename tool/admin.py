@@ -14,8 +14,10 @@ class IndustryAdmin(admin.ModelAdmin):
 class StockAdmin(admin.ModelAdmin):
     list_display = ('ticker', 'name', 'exchange',
                     'sector', 'industry',
-                    'market_cap', 'ltdebt_equity', 'beta',
+                    'market_cap', 'wacc', 'ltdebt_equity', 'beta',
                     'ipo_date', )
+
+    list_filter = ('sector', 'industry', 'ipo_date', 'wacc')
 
 admin.site.register(Sector, SectorAdmin)
 admin.site.register(Industry, IndustryAdmin)
